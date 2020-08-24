@@ -9,17 +9,18 @@
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
 
+mapped_survey = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\survey_results_geocoded.gdb\MappedSurvey"
+temp_working_gdb = r"C:\temp\SurveyCatalog_working.gdb"
+
 OCRS_sp_ref = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\OCRS Portland NAD 1983 (2011) LCC (Intl Feet).prj"
 
-BES_list = {"CROWN" : "Crown", "THALWAG" : "Thalwag"}
+BES_list = {"CROWN": "Crown", "THALWAG": "Thalwag"}
 
 Material_list = ["DIRT"]
 
-notes_fields = ["UnitID", "X_Section", "P_Code", "Description", "BES_Code", "Material", "Other"]
-notes_fields.insert(0, "Notes")
+notes_fields = ["Notes", "UnitID", "X_Section", "P_Code", "Description", "BES_Code", "Material", "Other"]
 
 field_lookup = {
-"Field1" : "Point",
 "Field2" : "Northing",
 "Field3" : "Easting",
 "Field4" : "Rim_Elevation",
