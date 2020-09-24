@@ -10,8 +10,7 @@
 #-------------------------------------------------------------------------------
 import arcpy
 import os
-from businessclasses import config
-
+from businessclasses import config_orig
 
 # ----------------------------------------------------------------------------------------------
 
@@ -24,20 +23,50 @@ def list_field_names(input_fc):
 
 # TODO - need to assign universal unique IDs to all survey records
 # TODO - need to assign unique IDs to each survey session (put in SurveyTracking)
-# TODO - capture date and proj num from file name
+# TODO - add field to SurveyTracking which points to raw survey source (txt file)
+
+# SurveyTracking part -------------------------------------------
+
+def survey_file_name_date(survey_file):
+    # assumes they keep naming the file using same format - super fragile
+    date = os.path.basename(survey_file).split(" ")[0]
+    return date
+
+def survey_file_name_project_number(survey_file):
+    # assumes they keep naming the file using same format - super fragile
+    project_number = os.path.basename(survey_file).split(" ")[1][:5]
+    return project_number
+
+def survey_file_name_survey_name(survey_file):
+    # assumes they keep naming the file using same format - super fragile
+    proj_no = survey_file_name_project_number(survey_file)
+    survey_name = os.path.basename(input).split(".")[0].partition(proj_no)[2]
+    return survey_name
+
+def insert_tracking_values(tracking_file, survey_file):
+    cursor = arcpy.da.InsertCursor(tracking_file, ["Survey_Name", "Survey_Date", "Project_Number", "Raw_Survey_Path"])
+    cursor.insertRow((survey_file_name_survey_name(survey_file),
+                      survey_file_name_date(survey_file),
+                      survey_file_name_project_number(survey_file),
+                      survey_file))
+    del cursor
+
+# SurveyPoints part ----------------------------------------------
 
 def geocode_survey_file(survey_file):
     try:
-        xy_event = arcpy.MakeXYEventLayer_management(survey_file, "Field3", "Field2", "in_memory\survey_data", config.OCRS_sp_ref)
+        xy_event = arcpy.MakeXYEventLayer_management(survey_file, "Field3", "Field2", "in_memory\survey_data", config_orig.OCRS_sp_ref)
     except:
-        xy_event = arcpy.MakeXYEventLayer_management(survey_file, "Easting", "Northing", "in_memory\survey_data", config.OCRS_sp_ref)
-    arcpy.Delete_management(os.path.join(config.temp_working_gdb, "survey_xy"))
-    survey_xy = arcpy.FeatureClassToFeatureClass_conversion(xy_event, config.temp_working_gdb, "survey_xy")
+        xy_event = arcpy.MakeXYEventLayer_management(survey_file, "Easting", "Northing", "in_memory\survey_data", config_orig.OCRS_sp_ref)
+    arcpy.Delete_management(os.path.join(config_orig.temp_working_gdb, "survey_xy")) #if file DNE this just moves on - nice
+    survey_xy = arcpy.FeatureClassToFeatureClass_conversion(xy_event, config_orig.temp_working_gdb, "survey_xy")
     return survey_xy
 
 def add_notes_fields(input_fc):
 
         # note - when field already exists method just moves on
+
+        arcpy.AddField_management(input_fc, "Point", "LONG")
 
         arcpy.AddField_management(input_fc, "Northing", "DOUBLE")
 
@@ -66,7 +95,7 @@ def add_notes_fields(input_fc):
         arcpy.AddField_management(input_fc, "Gen_Code", "TEXT", "", "", 10)
 
 def calc_standard_fields(input_fc):
-    for item in config.field_lookup.items():
+    for item in config_orig.field_lookup.items():
         if item[0] in list_field_names(input_fc):
             with arcpy.da.UpdateCursor(input_fc, [item[0], item[1]]) as cursor:
                 for row in cursor:
@@ -78,7 +107,7 @@ def calc_fields_from_notes(input_fc):
 
     # going to assume that raw txt are using or have been formatted to use real field names
 
-    with arcpy.da.UpdateCursor(input_fc, config.notes_fields) as cursor:
+    with arcpy.da.UpdateCursor(input_fc, config_orig.notes_fields) as cursor:
         for row in cursor:
             otherlist = []
             for item in row[0].split(" "):
@@ -86,13 +115,13 @@ def calc_fields_from_notes(input_fc):
                     row[1] = item
                 elif item[:2] == "BL" and item[2:].isdigit():
                     row[2] = item
-                elif item in config.P_code.keys():
+                elif item in config_orig.P_code.keys():
                     row[3] = item
-                    row[4] = config.P_code[item]
-                elif item in config.BES_list.keys(): # need to account for multiple?
+                    row[4] = config_orig.P_code[item]
+                elif item in config_orig.BES_list.keys(): # need to account for multiple?
                     row[5] = item
-                    row[4] = config.BES_list[item]
-                elif item in config.Material_list:
+                    row[4] = config_orig.BES_list[item]
+                elif item in config_orig.Material_list:
                     row[6] = item
                 else:
                     if item != " " and item is not None:
@@ -116,6 +145,8 @@ def calc_final_field(input_fc):
 #         for row in cursor:
 #             pass
 
+# -----------------------------------------------------------------------
+
 def register_survey_notes(survey_file):
     print "Starting Survey Notes Registration..."
 
@@ -128,25 +159,27 @@ def register_survey_notes(survey_file):
     print "Filling standard fields (if needed)"
     calc_standard_fields(survey_xy)
 
-    if all(item in list_field_names(survey_xy) for item in config.notes_fields):
+    if all(item in list_field_names(survey_xy) for item in config_orig.notes_fields):
         print "Parsing/ filling notes fields"
         calc_fields_from_notes(survey_xy)
     else:
         Exception()
         print "Required fields are missing!"
+
     print "Filling Final_Code field"
     calc_final_field(survey_xy)
 
     print "Appending result to MappedSurvey"
-    arcpy.Append_management(survey_xy, config.mapped_survey, "NO_TEST") # not sure if this works as is
+    arcpy.Append_management(survey_xy, config_orig.survey_points, "NO_TEST")
+
+    print "Inserting tracking values"
+    insert_tracking_values(config_orig.survey_tracking, survey_file)
 
     print "...Survey Notes Registration Finished"
 
 # ------ for testing/ running ----------------------------
-#gdb = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\survey_dev_testing.gdb"
-#fc = r"survey_11098GD_20200723"
 
 raw_return_folder = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\survey_raw"
-file = r"2020-08-13 11098GC COUNCIL SMK.txt"
+file = r"2020-08-13 11098GF COUNCIL SMK.txt"
 input = os.path.join(raw_return_folder, file)
 register_survey_notes(input)
