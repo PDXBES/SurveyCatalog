@@ -9,6 +9,7 @@
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
 import arcpy
+import sys
 import os
 from businessclasses import config_orig
 
@@ -21,35 +22,18 @@ def list_field_names(input_fc):
         field_names.append(field.name)
     return field_names
 
+def start_editing_session(workspace_path):
+    editor = arcpy.da.Editor(workspace_path)
+    editor.startEditing(False, True)
+    editor.startOperation()
+    return editor
+
+def stop_editing_session(workspace_editor, save_changes):
+    workspace_editor.stopOperation()
+    workspace_editor.stopEditing(save_changes)
+
 # TODO - need to assign universal unique IDs to all survey records
 # TODO - need to assign unique IDs to each survey session (put in SurveyTracking)
-# TODO - add field to SurveyTracking which points to raw survey source (txt file)
-
-# SurveyTracking part -------------------------------------------
-
-def survey_file_name_date(survey_file):
-    # assumes they keep naming the file using same format - super fragile
-    date = os.path.basename(survey_file).split(" ")[0]
-    return date
-
-def survey_file_name_project_number(survey_file):
-    # assumes they keep naming the file using same format - super fragile
-    project_number = os.path.basename(survey_file).split(" ")[1][:5]
-    return project_number
-
-def survey_file_name_survey_name(survey_file):
-    # assumes they keep naming the file using same format - super fragile
-    proj_no = survey_file_name_project_number(survey_file)
-    survey_name = os.path.basename(input).split(".")[0].partition(proj_no)[2]
-    return survey_name
-
-def insert_tracking_values(tracking_file, survey_file):
-    cursor = arcpy.da.InsertCursor(tracking_file, ["Survey_Name", "Survey_Date", "Project_Number", "Raw_Survey_Path"])
-    cursor.insertRow((survey_file_name_survey_name(survey_file),
-                      survey_file_name_date(survey_file),
-                      survey_file_name_project_number(survey_file),
-                      survey_file))
-    del cursor
 
 # SurveyPoints part ----------------------------------------------
 
@@ -139,43 +123,87 @@ def calc_final_field(input_fc):
                  row[2] = row[1]
             cursor.updateRow(row)
 
-# on hold until I can work out the logic
 # def calc_unitID_for_low_point(input_fc):
+
+# on hold until I can work out the logic
+
 #     with arcpy.da.UpdateCursor(input_fc, ["X_Section", "Final_Code", "UnitID"]) as cursor:
 #         for row in cursor:
 #             pass
 
 # -----------------------------------------------------------------------
 
+# SurveyTracking part -------------------------------------------
+
+def survey_file_name_date(survey_file):
+    # assumes they keep naming the file using same format - super fragile
+    date = os.path.basename(survey_file).split(" ")[0]
+    return date
+
+def survey_file_name_project_number(survey_file):
+    # assumes they keep naming the file using same format - super fragile
+    project_number = os.path.basename(survey_file).split(" ")[1][:5]
+    return project_number
+
+def survey_file_name_survey_name(survey_file):
+    # assumes they keep naming the file using same format - super fragile
+    proj_no = survey_file_name_project_number(survey_file)
+    survey_name = os.path.basename(input).split(".")[0].partition(proj_no)[2]
+    return survey_name
+
+def insert_tracking_values(tracking_file, survey_file):
+    cursor = arcpy.da.InsertCursor(tracking_file, ["Survey_Name", "Survey_Date", "Project_Number", "Raw_Survey_Path"])
+    cursor.insertRow((survey_file_name_survey_name(survey_file),
+                      survey_file_name_date(survey_file),
+                      survey_file_name_project_number(survey_file),
+                      survey_file))
+    del cursor
+
+
+# Main -----------------------------------------------------------
+
 def register_survey_notes(survey_file):
     print "Starting Survey Notes Registration..."
 
-    print "Geocoding survey file"
-    survey_xy = geocode_survey_file(survey_file)
+    editor = start_editing_session(config_orig.survey_catalog_database)
 
-    print "Adding notes fields"
-    add_notes_fields(survey_xy)
+    try:
+        print "Geocoding survey file"
+        survey_xy = geocode_survey_file(survey_file)
 
-    print "Filling standard fields (if needed)"
-    calc_standard_fields(survey_xy)
+        print "Adding notes fields"
+        add_notes_fields(survey_xy)
 
-    if all(item in list_field_names(survey_xy) for item in config_orig.notes_fields):
-        print "Parsing/ filling notes fields"
-        calc_fields_from_notes(survey_xy)
-    else:
-        Exception()
-        print "Required fields are missing!"
+        print "Filling standard fields (if needed)"
+        calc_standard_fields(survey_xy)
 
-    print "Filling Final_Code field"
-    calc_final_field(survey_xy)
+        if all(item in list_field_names(survey_xy) for item in config_orig.notes_fields):
+            print "Parsing/ filling notes fields"
+            calc_fields_from_notes(survey_xy)
+        else:
+            Exception()
+            print "Required fields are missing!"
 
-    print "Appending result to MappedSurvey"
-    arcpy.Append_management(survey_xy, config_orig.survey_points, "NO_TEST")
+        print "Filling Final_Code field"
+        calc_final_field(survey_xy)
 
-    print "Inserting tracking values"
-    insert_tracking_values(config_orig.survey_tracking, survey_file)
+        print "Appending result to SurveyPoints"
+        arcpy.Append_management(survey_xy, config_orig.survey_points_path, "NO_TEST")
 
-    print "...Survey Notes Registration Finished"
+        print "Inserting values into SurveyTracking"
+        insert_tracking_values(config_orig.survey_tracking_path, survey_file)
+
+        print "...Survey Notes Registration Finished"
+
+        stop_editing_session(editor, True)
+    except:
+        stop_editing_session(editor, False)
+        arcpy.AddMessage("DB Error while adding survey. Changes rolled back.")
+        e = sys.exc_info()[1]
+        arcpy.AddMessage(e.args[0])
+        arcpy.AddMessage(e.args[1])
+        arcpy.AddMessage(e.args[2])
+
 
 # ------ for testing/ running ----------------------------
 

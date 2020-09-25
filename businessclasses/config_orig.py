@@ -9,12 +9,15 @@
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
 
-#mapped_survey = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\survey_results_geocoded.gdb\MappedSurvey"
-survey_points = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\Survey_Catalog.gdb\SurveyPoints"
-survey_tracking = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\Survey_Catalog.gdb\SurveyTracking"
-temp_working_gdb = r"C:\temp\SurveyCatalog_working.gdb"
+# file refs #
 
+survey_catalog_database = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\Survey_Catalog.gdb"
+survey_tracking_path = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\Survey_Catalog.gdb\SurveyTracking"
+survey_points_path = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\Survey_Catalog.gdb\SurveyPoints"
+survey_catalog_current_id_table_path = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\Survey_Catalog.gdb\Current_ID"
+temp_working_gdb = r"C:\temp\SurveyCatalog_working.gdb"
 OCRS_sp_ref = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\OCRS Portland NAD 1983 (2011) LCC (Intl Feet).prj"
+
 
 BES_list = {"CROWN": "Crown", "THALWAG": "Thalweg", "THALWEG": "Thalweg"}
 
