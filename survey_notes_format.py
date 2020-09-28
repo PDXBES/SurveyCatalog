@@ -1,17 +1,16 @@
 #-------------------------------------------------------------------------------
 # Name:        survey_notes_formatter
-# Purpose:
-#
-# Author:      dashney
+# Purpose:     to format notes
 #
 # Created:     28/07/2020
-# Copyright:   (c) dashney 2020
+# Copyright:   IMS - M&GIS 2020
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
 import arcpy
 import sys
 import os
-from businessclasses import config_orig
+import config_orig
+
 
 # ----------------------------------------------------------------------------------------------
 
@@ -31,6 +30,44 @@ def start_editing_session(workspace_path):
 def stop_editing_session(workspace_editor, save_changes):
     workspace_editor.stopOperation()
     workspace_editor.stopEditing(save_changes)
+
+def retrieve_current_id(self, object_type):
+    # type: (GenericObject) -> int
+    current_id = self._retrieve_block_of_ids(object_type, 1)
+    return current_id
+
+def _retrieve_block_of_ids(self, object_type, number_of_ids):
+    if number_of_ids > 0:
+        field_names = ["Object_Type", "Current_ID"]
+        cursor = arcpy.da.UpdateCursor(config_orig.survey_catalog_current_id_table_path, field_names)
+        for row in cursor:
+            object_name, current_id = row
+            if object_type.__name__ == object_name:
+                next_id = current_id + number_of_ids
+                break
+        cursor.updateRow([object_name, next_id])
+        del cursor
+    else:
+        raise Exception()
+    return current_id
+
+def add_parent_id(self, in_memory_table, parent_id_field, parent_id):
+    arcpy.AddField_management(in_memory_table, parent_id_field, "LONG")
+    arcpy.CalculateField_management(in_memory_table, parent_id_field, parent_id, "PYTHON_9.3")
+
+def add_ids(self, in_memory_table, unique_id_field, object_type):
+    number_of_ids = int(arcpy.GetCount_management(in_memory_table)[0])
+    current_id = self._retrieve_block_of_ids(object_type, number_of_ids)
+    next_id = current_id + number_of_ids
+    arcpy.AddField_management(in_memory_table, unique_id_field, "LONG")
+    cursor = arcpy.da.UpdateCursor(in_memory_table, unique_id_field)
+    for row in cursor:
+        if current_id == next_id:
+            raise Exception
+        row[0] = current_id
+        cursor.updateRow(row)
+        current_id += 1
+    del cursor
 
 # TODO - need to assign universal unique IDs to all survey records
 # TODO - need to assign unique IDs to each survey session (put in SurveyTracking)

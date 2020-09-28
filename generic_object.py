@@ -1,6 +1,6 @@
-from dataio.db_data_io import DbDataIo
+from db_data_io import DbDataIo
 from config import Config
-import arcpy
+
 try:
     from typing import List, Any, Dict
 except:

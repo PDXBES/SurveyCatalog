@@ -1,5 +1,5 @@
 import arcpy
-from businessclasses.config import Config
+from config import Config
 try:
     from typing import List, Any
 except:

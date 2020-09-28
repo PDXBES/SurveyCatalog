@@ -1,10 +1,10 @@
 import arcpy
-from businessclasses.config import Config
+from config import Config
 try:
     from typing import List, Any, Dict
 except:
     pass
-from businessclasses.generic_object import GenericObject
+from generic_object import GenericObject
 from db_data_io import DbDataIo
 
 

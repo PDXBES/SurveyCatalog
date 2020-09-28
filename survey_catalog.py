@@ -15,6 +15,10 @@ class SurveyCatalog:
         self.survey_returns = []
         self.config = config
 
-
+    def add_survey(self, survey_return):
+        # type: (SurveyReturn) -> None
+        #self.check_for_duplicate_model(survey_return)
+        #self.check_for_valid_model(survey_return)
+        self.survey_returns.append(survey_return)
 
 
