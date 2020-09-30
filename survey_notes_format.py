@@ -21,43 +21,45 @@ def list_field_names(input_fc):
         field_names.append(field.name)
     return field_names
 
+
 def start_editing_session(workspace_path):
     editor = arcpy.da.Editor(workspace_path)
     editor.startEditing(False, True)
     editor.startOperation()
     return editor
 
+
 def stop_editing_session(workspace_editor, save_changes):
     workspace_editor.stopOperation()
     workspace_editor.stopEditing(save_changes)
 
-def retrieve_current_id(self, object_type):
-    # type: (GenericObject) -> int
-    current_id = self._retrieve_block_of_ids(object_type, 1)
+
+def retrieve_current_id(object_type):
+    current_id = _retrieve_block_of_ids(object_type, 1)
     return current_id
 
-def _retrieve_block_of_ids(self, object_type, number_of_ids):
+
+def _retrieve_block_of_ids(object_type, number_of_ids):
+    current_id = ""
     if number_of_ids > 0:
         field_names = ["Object_Type", "Current_ID"]
         cursor = arcpy.da.UpdateCursor(config_orig.survey_catalog_current_id_table_path, field_names)
         for row in cursor:
-            object_name, current_id = row
-            if object_type.__name__ == object_name:
-                next_id = current_id + number_of_ids
-                break
-        cursor.updateRow([object_name, next_id])
+            object_name, row_current_id = row
+            if object_type == object_name:
+                current_id = row_current_id
+                next_id = row_current_id + number_of_ids
+                #break
+                cursor.updateRow([object_name, next_id])
         del cursor
     else:
         raise Exception()
     return current_id
 
-def add_parent_id(self, in_memory_table, parent_id_field, parent_id):
-    arcpy.AddField_management(in_memory_table, parent_id_field, "LONG")
-    arcpy.CalculateField_management(in_memory_table, parent_id_field, parent_id, "PYTHON_9.3")
 
-def add_ids(self, in_memory_table, unique_id_field, object_type):
+def add_ids(in_memory_table, unique_id_field, object_type):
     number_of_ids = int(arcpy.GetCount_management(in_memory_table)[0])
-    current_id = self._retrieve_block_of_ids(object_type, number_of_ids)
+    current_id = _retrieve_block_of_ids(object_type, number_of_ids)
     next_id = current_id + number_of_ids
     arcpy.AddField_management(in_memory_table, unique_id_field, "LONG")
     cursor = arcpy.da.UpdateCursor(in_memory_table, unique_id_field)
@@ -69,8 +71,43 @@ def add_ids(self, in_memory_table, unique_id_field, object_type):
         current_id += 1
     del cursor
 
-# TODO - need to assign universal unique IDs to all survey records
-# TODO - need to assign unique IDs to each survey session (put in SurveyTracking)
+
+def survey_return_already_registered(survey_file):
+    already_registered = False
+    with arcpy.da.SearchCursor(config_orig.survey_tracking_path, "Raw_Survey_Path") as cursor:
+        for row in cursor:
+            if row[0] == survey_file:
+                already_registered = True
+    return already_registered
+
+
+def survey_return_exists(survey_file):
+    exists = False
+    if os.path.exists(survey_file):
+        exists = True
+    return exists
+
+
+def survey_return_is_valid(survey_file):
+    valid = False
+    if survey_return_already_registered(survey_file) is False and survey_return_exists(survey_file):
+        valid = True
+    return valid
+
+
+def add_long_field(input_fc, field_name):
+    if field_name not in list_field_names(input_fc):
+        arcpy.AddField_management(input_fc, field_name, "LONG")
+
+
+def add_double_field(input_fc, field_name):
+    if field_name not in list_field_names(input_fc):
+        arcpy.AddField_management(input_fc, field_name, "DOUBLE")
+
+
+def add_text_field(input_fc, field_name, length):
+    if field_name not in list_field_names(input_fc):
+        arcpy.AddField_management(input_fc, field_name, "TEXT", "", "", length)
 
 # SurveyPoints part ----------------------------------------------
 
@@ -83,37 +120,50 @@ def geocode_survey_file(survey_file):
     survey_xy = arcpy.FeatureClassToFeatureClass_conversion(xy_event, config_orig.temp_working_gdb, "survey_xy")
     return survey_xy
 
-def add_notes_fields(input_fc):
 
-        # note - when field already exists method just moves on
+def add_required_fields(input_fc):
 
-        arcpy.AddField_management(input_fc, "Point", "LONG")
+        # note - when field already exists method just moves on - APPARENTLY NOT TRUE
 
-        arcpy.AddField_management(input_fc, "Northing", "DOUBLE")
+        add_long_field(input_fc, "Survey_Return_ID")
 
-        arcpy.AddField_management(input_fc, "Easting", "DOUBLE")
+        add_long_field(input_fc, "Survey_Point_ID")
 
-        arcpy.AddField_management(input_fc, "Rim_Elevation", "DOUBLE")
+        add_long_field(input_fc, "Point")
 
-        arcpy.AddField_management(input_fc, "Notes", "TEXT", "", "", 250)
+        add_double_field(input_fc, "Northing")
 
-        arcpy.AddField_management(input_fc, "UnitID", "TEXT", "", "", 6)
+        add_double_field(input_fc, "Easting")
 
-        arcpy.AddField_management(input_fc, "X_Section", "TEXT", "", "", 6)
+        add_double_field(input_fc, "Rim_Elevation")
 
-        arcpy.AddField_management(input_fc, "P_Code", "TEXT", "", "", 6)
+        add_text_field(input_fc, "Notes", 250)
 
-        arcpy.AddField_management(input_fc, "BES_Code", "TEXT", "", "", 15)
+        add_text_field(input_fc, "UnitID", 6)
 
-        arcpy.AddField_management(input_fc, "Description", "TEXT", "", "", 60)
+        add_text_field(input_fc, "X_Section", 6)
 
-        arcpy.AddField_management(input_fc, "Material", "TEXT", "", "", 10)
+        add_text_field(input_fc, "P_Code", 6)
 
-        arcpy.AddField_management(input_fc, "Other", "TEXT", "", "", 60)
+        add_text_field(input_fc, "BES_Code", 15)
 
-        arcpy.AddField_management(input_fc, "Final_Code", "TEXT", "", "", 10)
+        add_text_field(input_fc, "Description", 60)
 
-        arcpy.AddField_management(input_fc, "Gen_Code", "TEXT", "", "", 10)
+        add_text_field(input_fc, "Material", 10)
+
+        add_text_field(input_fc, "Other", 60)
+
+        add_text_field(input_fc, "Final_Code", 10)
+
+        add_text_field(input_fc, "Gen_Code", 10)
+
+
+def calc_survey_return_id_field(input_fc, current_id):
+    with arcpy.da.UpdateCursor(input_fc, "Survey_Return_ID") as cursor:
+        for row in cursor:
+            row[0] = current_id
+            cursor.updateRow(row)
+
 
 def calc_standard_fields(input_fc):
     for item in config_orig.field_lookup.items():
@@ -121,8 +171,12 @@ def calc_standard_fields(input_fc):
             with arcpy.da.UpdateCursor(input_fc, [item[0], item[1]]) as cursor:
                 for row in cursor:
                     if row[0] is not None:
-                        row[1] = row[0]
+                        try:
+                            row[1] = row[0]
+                        except:
+                            row[1] = float(row[0])
                     cursor.updateRow(row)
+
 
 def calc_fields_from_notes(input_fc):
 
@@ -151,6 +205,7 @@ def calc_fields_from_notes(input_fc):
                 row[7] = str(otherlist).strip('[]')
             cursor.updateRow(row)
 
+
 def calc_final_field(input_fc):
     with arcpy.da.UpdateCursor(input_fc, ["P_Code", "BES_Code", "Final_Code"]) as cursor:
         for row in cursor:
@@ -168,19 +223,20 @@ def calc_final_field(input_fc):
 #         for row in cursor:
 #             pass
 
-# -----------------------------------------------------------------------
-
 # SurveyTracking part -------------------------------------------
+
 
 def survey_file_name_date(survey_file):
     # assumes they keep naming the file using same format - super fragile
     date = os.path.basename(survey_file).split(" ")[0]
     return date
 
+
 def survey_file_name_project_number(survey_file):
     # assumes they keep naming the file using same format - super fragile
     project_number = os.path.basename(survey_file).split(" ")[1][:5]
     return project_number
+
 
 def survey_file_name_survey_name(survey_file):
     # assumes they keep naming the file using same format - super fragile
@@ -188,9 +244,11 @@ def survey_file_name_survey_name(survey_file):
     survey_name = os.path.basename(input).split(".")[0].partition(proj_no)[2]
     return survey_name
 
-def insert_tracking_values(tracking_file, survey_file):
-    cursor = arcpy.da.InsertCursor(tracking_file, ["Survey_Name", "Survey_Date", "Project_Number", "Raw_Survey_Path"])
-    cursor.insertRow((survey_file_name_survey_name(survey_file),
+
+def insert_tracking_values(tracking_file, survey_file, current_id):
+    cursor = arcpy.da.InsertCursor(tracking_file, ["Survey_Return_ID", "Survey_Name", "Survey_Date", "Project_Number", "Raw_Survey_Path"])
+    cursor.insertRow((current_id,
+                      survey_file_name_survey_name(survey_file),
                       survey_file_name_date(survey_file),
                       survey_file_name_project_number(survey_file),
                       survey_file))
@@ -199,52 +257,72 @@ def insert_tracking_values(tracking_file, survey_file):
 
 # Main -----------------------------------------------------------
 
+
 def register_survey_notes(survey_file):
+
+    current_id = retrieve_current_id("Survey_Return")
+
     print "Starting Survey Notes Registration..."
 
-    editor = start_editing_session(config_orig.survey_catalog_database)
+    if survey_return_is_valid(survey_file):
 
-    try:
-        print "Geocoding survey file"
-        survey_xy = geocode_survey_file(survey_file)
+        editor = start_editing_session(config_orig.survey_catalog_database)
 
-        print "Adding notes fields"
-        add_notes_fields(survey_xy)
+        try:
+            print "Geocoding survey file"
+            survey_xy = geocode_survey_file(survey_file)
 
-        print "Filling standard fields (if needed)"
-        calc_standard_fields(survey_xy)
+            print "Adding required fields"
+            add_required_fields(survey_xy)
 
-        if all(item in list_field_names(survey_xy) for item in config_orig.notes_fields):
-            print "Parsing/ filling notes fields"
-            calc_fields_from_notes(survey_xy)
-        else:
-            Exception()
-            print "Required fields are missing!"
+            print "Assigning IDs to the Survey Points"
+            add_ids(survey_xy, "Survey_Point_ID", "Survey_Point")
+            calc_survey_return_id_field(survey_xy, current_id)
 
-        print "Filling Final_Code field"
-        calc_final_field(survey_xy)
+            print "Filling standard fields (if needed)"
+            calc_standard_fields(survey_xy)
 
-        print "Appending result to SurveyPoints"
-        arcpy.Append_management(survey_xy, config_orig.survey_points_path, "NO_TEST")
+            if all(item in list_field_names(survey_xy) for item in config_orig.notes_fields):
+                print "Parsing/ filling notes fields"
+                calc_fields_from_notes(survey_xy)
+            else:
+                Exception()
+                print "Required fields are missing!"
 
-        print "Inserting values into SurveyTracking"
-        insert_tracking_values(config_orig.survey_tracking_path, survey_file)
+            print "Filling Final_Code field"
+            calc_final_field(survey_xy)
 
-        print "...Survey Notes Registration Finished"
+            print "Appending survey to SurveyPoints"
+            arcpy.Append_management(survey_xy, config_orig.survey_points_path, "NO_TEST")
 
-        stop_editing_session(editor, True)
-    except:
-        stop_editing_session(editor, False)
-        arcpy.AddMessage("DB Error while adding survey. Changes rolled back.")
-        e = sys.exc_info()[1]
-        arcpy.AddMessage(e.args[0])
-        arcpy.AddMessage(e.args[1])
-        arcpy.AddMessage(e.args[2])
+            print "Inserting values into SurveyTracking"
+            insert_tracking_values(config_orig.survey_tracking_path, survey_file, current_id)
+
+            print "...Survey Notes Registration Finished"
+
+            stop_editing_session(editor, True)
+        except:
+            stop_editing_session(editor, False)
+            arcpy.AddMessage("DB Error while adding survey. Changes rolled back.")
+            e = sys.exc_info()[1]
+            arcpy.AddMessage(e.args[0])
+            arcpy.AddMessage(e.args[1])
+            arcpy.AddMessage(e.args[2])
+    else:
+        print "Problem with the input survey file"
+        print "No survey will be registered"
+
+
 
 
 # ------ for testing/ running ----------------------------
 
 raw_return_folder = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\survey_raw"
-file = r"2020-08-13 11098GF COUNCIL SMK.txt"
+#file = r"2020-07-23 11098GD ADJ CAB EDIT SMK.txt"
+file = r"2020-07-24 11098GB COUNCIL GPS ADJ SMK.txt"
+#file = r"2020-07-24 11098GE COUNCIL SMK.txt"
+#file = r"2020-06-12 11098 Dosch Ditches and Inlets Test SMK.txt"
+#file = r"2020-08-13 11098GC COUNCIL SMK.txt"
+#file = r"2020-08-13 11098GF COUNCIL SMK.txt"
 input = os.path.join(raw_return_folder, file)
 register_survey_notes(input)

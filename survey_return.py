@@ -12,7 +12,7 @@ class SurveyReturn(GenericObject):
     def __init__(self, config):
         # type: (Config) -> None
         self.id = 0
-        self.parent_model_id = 0
+        self.parent_id = 0
         self.survey_return_path = None
 
 

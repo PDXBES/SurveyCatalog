@@ -23,6 +23,8 @@ BES_list = {"CROWN": "Crown", "THALWAG": "Thalweg", "THALWEG": "Thalweg"}
 
 Material_list = ["DIRT"]
 
+
+
 notes_fields = ["Notes", "UnitID", "X_Section", "P_Code", "Description", "BES_Code", "Material", "Other"]
 
 field_lookup = {

@@ -1,5 +1,5 @@
 import arcpy
-#from survey_return import SurveyReturn
+from survey_return import SurveyReturn
 from survey_catalog import SurveyCatalog
 from survey_return import SurveyReturn
 from survey_catalog_data_io import SurveyCatalogDbDataIo
@@ -43,15 +43,15 @@ class Survey_Registration(object):
         """Define parameter definitions"""
         arcpy.AddMessage("Get parameter info")
 
-        survey_directory = arcpy.Parameter(
-            displayName="Survey Directory",
-            name="survey_directory",
+        survey_path = arcpy.Parameter(
+            displayName="Raw Survey Path",
+            name="survey_path",
             datatype="DEWorkspace",
             parameterType="Required",
             direction="Input")
-        survey_directory.filter.list = ["File System", "Local Database"]
+        survey_path.filter.list = ["File System", "Local Database"]
 
-        params = [survey_directory]
+        params = [survey_path]
 
         return params
 
@@ -78,13 +78,13 @@ class Survey_Registration(object):
         arcpy.AddMessage("Execute")
 
         self.survey_return = SurveyReturn.initialize_with_current_id(self.config, self.survey_catalog_data_io)
-        self.survey_return.parent_model_id = 0
+        self.survey_return.parent_id = 0
 
         survey_path_parameter = parameters[0]
 
         self.survey_return.survey_return_path = survey_path_parameter
 
-        self.survey_catalog.add_survey(self.survey_return)
+        self.survey_catalog.add_survey_return(self.survey_return)
 
         EMGAATS_Survey_Registration_function(self.survey_catalog, self.config)
 
@@ -96,9 +96,6 @@ def EMGAATS_Survey_Registration_function(survey_catalog, config):
     survey_return = survey_catalog.survey_returns[0]
     try:
         arcpy.AddMessage("Adding Survey...")
-
-
-
         survey_catalog_data_io.add_survey(survey_return, survey_return_data_io)
         arcpy.AddMessage("Survey Added")
     except:

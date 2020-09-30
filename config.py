@@ -16,7 +16,7 @@ class Config:
 
         self.survey_catalog_database = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\Survey_Catalog.gdb"
         self.survey_tracking_path = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\Survey_Catalog.gdb\SurveyTracking"
-        self.mapped_survey = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\Survey_Catalog.gdb\SurveyPoints"
+        self.survey_points_path = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\Survey_Catalog.gdb\SurveyPoints"
         self.survey_catalog_current_id_table_path = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\Survey_Catalog.gdb\Current_ID"
         self.temp_working_gdb = r"C:\temp\SurveyCatalog_working.gdb"
         self.OCRS_sp_ref = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\OCRS Portland NAD 1983 (2011) LCC (Intl Feet).prj"

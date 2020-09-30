@@ -19,14 +19,15 @@ class SurveyCatalogDbDataIo(DbDataIo):
         self.current_id_database_table_path = self.config.survey_catalog_current_id_table_path
         self.workspace = "in_memory"
 
+    # NOT USED AS FAR AS I CAN TELL
     #def retrieve_current_model_id(self):
     #    current_model_id = self.retrieve_current_id(SurveyReturn)
     #    return current_model_id
 
-    def add_survey(self, survey_return, survey_data_io):
+    def add_survey(self, survey_return, survey_return_data_io):
         # type: (SurveyReturn, SurveyReturnDataIo) -> None
 
-        editor = survey_data_io.start_editing_session(self.config.survey_catalog_database)
+        editor = survey_return_data_io.start_editing_session(self.config.survey_catalog_database)
         try:
 
             # append to SurveyTracking
@@ -35,11 +36,11 @@ class SurveyCatalogDbDataIo(DbDataIo):
                                      self.config.survey_tracking_path,
                                      self.config.survey_tracking_path)
             # append to SurveyPoints
-            survey_data_io.append_survey_return(survey_return)
+            survey_return_data_io.append_survey_return(survey_return)
 
-            survey_data_io.stop_editing_session(editor, True)
+            survey_return_data_io.stop_editing_session(editor, True)
         except:
-            survey_data_io.stop_editing_session(editor, False)
+            survey_return_data_io.stop_editing_session(editor, False)
             arcpy.AddMessage("DB Error while adding model. Changes rolled back.")
             e = sys.exc_info()[1]
             arcpy.AddMessage(e.args[0])
