@@ -171,12 +171,15 @@ def calc_standard_fields(input_fc):
             with arcpy.da.UpdateCursor(input_fc, [item[0], item[1]]) as cursor:
                 for row in cursor:
                     if row[0] is not None:
-                        try:
+                        if "_REF" not in str(row[0]):
                             row[1] = row[0]
-                        except:
-                            row[1] = float(row[0])
                     cursor.updateRow(row)
 
+def point_field_cleanup(input_fc):
+    with arcpy.da.UpdateCursor(input_fc, "Point") as cursor:
+        for row in cursor:
+            if "_REF" in str(row[0]):
+                cursor.deleteRow()
 
 def calc_fields_from_notes(input_fc):
 
@@ -282,6 +285,9 @@ def register_survey_notes(survey_file):
             print "Filling standard fields (if needed)"
             calc_standard_fields(survey_xy)
 
+            print "Point field cleanup (if needed)"
+            point_field_cleanup(survey_xy)
+
             if all(item in list_field_names(survey_xy) for item in config_orig.notes_fields):
                 print "Parsing/ filling notes fields"
                 calc_fields_from_notes(survey_xy)
@@ -318,11 +324,13 @@ def register_survey_notes(survey_file):
 # ------ for testing/ running ----------------------------
 
 raw_return_folder = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\survey_raw"
+
 #file = r"2020-07-23 11098GD ADJ CAB EDIT SMK.txt"
-file = r"2020-07-24 11098GB COUNCIL GPS ADJ SMK.txt"
+#file = r"2020-07-24 11098GB COUNCIL GPS ADJ SMK.txt"
 #file = r"2020-07-24 11098GE COUNCIL SMK.txt"
 #file = r"2020-06-12 11098 Dosch Ditches and Inlets Test SMK.txt"
 #file = r"2020-08-13 11098GC COUNCIL SMK.txt"
-#file = r"2020-08-13 11098GF COUNCIL SMK.txt"
+file = r"2020-08-13 11098GF COUNCIL SMK.txt"
+
 input = os.path.join(raw_return_folder, file)
 register_survey_notes(input)
