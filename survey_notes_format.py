@@ -228,33 +228,60 @@ def calc_final_field(input_fc):
 
 # SurveyTracking part -------------------------------------------
 
+def survey_file_base_name(survey_file):
+    base_name = os.path.basename(input).split(".")[0]
+    return base_name
+
+
+def split_base_name(survey_file):
+    split_name = survey_file_base_name(survey_file).split(" ")
+    return split_name
+
+
+def find_between(s, first, last):
+    try:
+        start = s.index(first) + len(first)
+        end = s.index(last, start)
+        return s[start:end]
+    except ValueError:
+        return ""
+
 
 def survey_file_name_date(survey_file):
     # assumes they keep naming the file using same format - super fragile
-    date = os.path.basename(survey_file).split(" ")[0]
+    date = split_base_name(survey_file)[0]
     return date
 
 
 def survey_file_name_project_number(survey_file):
     # assumes they keep naming the file using same format - super fragile
-    project_number = os.path.basename(survey_file).split(" ")[1][:5]
+    project_number = split_base_name(survey_file)[1][:5]
     return project_number
 
 
 def survey_file_name_survey_name(survey_file):
     # assumes they keep naming the file using same format - super fragile
-    proj_no = survey_file_name_project_number(survey_file)
-    survey_name = os.path.basename(input).split(".")[0].partition(proj_no)[2]
-    return survey_name
+    survey_name = find_between(survey_file_base_name(survey_file),
+                               survey_file_name_project_number(survey_file),
+                               survey_file_name_user_initials(survey_file))
+    return survey_name.strip()
+
+
+def survey_file_name_user_initials(survey_file):
+    # assumes they keep naming the file using same format - super fragile
+    user_initials = split_base_name(survey_file)[-1]
+    return user_initials
 
 
 def insert_tracking_values(tracking_file, survey_file, current_id):
-    cursor = arcpy.da.InsertCursor(tracking_file, ["Survey_Return_ID", "Survey_Name", "Survey_Date", "Project_Number", "Raw_Survey_Path"])
+    cursor = arcpy.da.InsertCursor(tracking_file, ["Survey_Return_ID", "Survey_Name", "Survey_Date", "Project_Number", "Raw_Survey_Path", "Surveyor"])
     cursor.insertRow((current_id,
                       survey_file_name_survey_name(survey_file),
                       survey_file_name_date(survey_file),
                       survey_file_name_project_number(survey_file),
-                      survey_file))
+                      survey_file,
+                      survey_file_name_user_initials(survey_file)
+                      ))
     del cursor
 
 
