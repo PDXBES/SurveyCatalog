@@ -357,7 +357,12 @@ raw_return_folder = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_p
 #file = r"2020-07-24 11098GE COUNCIL SMK.txt"
 #file = r"2020-06-12 11098 Dosch Ditches and Inlets Test SMK.txt"
 #file = r"2020-08-13 11098GC COUNCIL SMK.txt"
-file = r"2020-08-13 11098GF COUNCIL SMK.txt"
+#file = r"2020-08-13 11098GF COUNCIL SMK.txt"
+
+#file = r"2020-12-14 11098GG COUNCIL SMK.txt"
+#file = r"2020-12-18 11098GH COUNCIL SMK.txt"
+file = r"2020-12-18 11098GI COUNCIL SMK.txt"
+
 
 input = os.path.join(raw_return_folder, file)
 register_survey_notes(input)

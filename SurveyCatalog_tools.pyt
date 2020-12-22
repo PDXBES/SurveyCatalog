@@ -103,3 +103,5 @@ def EMGAATS_Survey_Registration_function(survey_catalog, config):
         arcpy.ExecuteError()
 
 
+#TODO - cannot yet run this pyt - something fails in db_data_io._retrieve_block_of_ids
+
