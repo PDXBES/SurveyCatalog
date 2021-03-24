@@ -10,7 +10,7 @@ import arcpy
 import sys
 import os
 import config_orig
-
+from datetime import datetime
 
 # ----------------------------------------------------------------------------------------------
 
@@ -21,23 +21,19 @@ def list_field_names(input_fc):
         field_names.append(field.name)
     return field_names
 
-
 def start_editing_session(workspace_path):
     editor = arcpy.da.Editor(workspace_path)
     editor.startEditing(False, True)
     editor.startOperation()
     return editor
 
-
 def stop_editing_session(workspace_editor, save_changes):
     workspace_editor.stopOperation()
     workspace_editor.stopEditing(save_changes)
 
-
 def retrieve_current_id(object_type):
     current_id = _retrieve_block_of_ids(object_type, 1)
     return current_id
-
 
 def _retrieve_block_of_ids(object_type, number_of_ids):
     current_id = ""
@@ -56,7 +52,6 @@ def _retrieve_block_of_ids(object_type, number_of_ids):
         raise Exception()
     return current_id
 
-
 def add_ids(in_memory_table, unique_id_field, object_type):
     number_of_ids = int(arcpy.GetCount_management(in_memory_table)[0])
     current_id = _retrieve_block_of_ids(object_type, number_of_ids)
@@ -71,7 +66,6 @@ def add_ids(in_memory_table, unique_id_field, object_type):
         current_id += 1
     del cursor
 
-
 def survey_return_already_registered(survey_file):
     already_registered = False
     with arcpy.da.SearchCursor(config_orig.survey_tracking_path, "Raw_Survey_Path") as cursor:
@@ -80,13 +74,11 @@ def survey_return_already_registered(survey_file):
                 already_registered = True
     return already_registered
 
-
 def survey_return_exists(survey_file):
     exists = False
     if os.path.exists(survey_file):
         exists = True
     return exists
-
 
 def survey_return_is_valid(survey_file):
     valid = False
@@ -94,20 +86,18 @@ def survey_return_is_valid(survey_file):
         valid = True
     return valid
 
-
 def add_long_field(input_fc, field_name):
     if field_name not in list_field_names(input_fc):
         arcpy.AddField_management(input_fc, field_name, "LONG")
-
 
 def add_double_field(input_fc, field_name):
     if field_name not in list_field_names(input_fc):
         arcpy.AddField_management(input_fc, field_name, "DOUBLE")
 
-
 def add_text_field(input_fc, field_name, length):
     if field_name not in list_field_names(input_fc):
         arcpy.AddField_management(input_fc, field_name, "TEXT", "", "", length)
+
 
 # SurveyPoints part ----------------------------------------------
 
@@ -116,10 +106,18 @@ def geocode_survey_file(survey_file):
         xy_event = arcpy.MakeXYEventLayer_management(survey_file, "Field3", "Field2", "in_memory\survey_data", config_orig.OCRS_sp_ref)
     except:
         xy_event = arcpy.MakeXYEventLayer_management(survey_file, "Easting", "Northing", "in_memory\survey_data", config_orig.OCRS_sp_ref)
-    arcpy.Delete_management(os.path.join(config_orig.temp_working_gdb, "survey_xy")) #if file DNE this just moves on - nice
+    arcpy.Delete_management(os.path.join(config_orig.temp_working_gdb, "survey_xy")) #if file DNE this just moves on
+    create_gdb_if_none(config_orig.temp_working_gdb)
     survey_xy = arcpy.FeatureClassToFeatureClass_conversion(xy_event, config_orig.temp_working_gdb, "survey_xy")
     return survey_xy
 
+def create_gdb_if_none(gdb_full_path):
+    if os.path.isdir(gdb_full_path) == False:
+        path = os.path.dirname(gdb_full_path)
+        name = os.path.basename(gdb_full_path)
+        arcpy.CreateFileGDB_management(path, name)
+    else:
+        pass
 
 def add_required_fields(input_fc):
 
@@ -157,13 +155,11 @@ def add_required_fields(input_fc):
 
         add_text_field(input_fc, "Gen_Code", 10)
 
-
 def calc_survey_return_id_field(input_fc, current_id):
     with arcpy.da.UpdateCursor(input_fc, "Survey_Return_ID") as cursor:
         for row in cursor:
             row[0] = current_id
             cursor.updateRow(row)
-
 
 def calc_standard_fields(input_fc):
     for item in config_orig.field_lookup.items():
@@ -189,14 +185,14 @@ def calc_fields_from_notes(input_fc):
         for row in cursor:
             otherlist = []
             for item in row[0].split(" "):
-                if len(item) == 6 and item[:3].isalpha() and item[3:].isdigit():
+                if len(item) == 6 and item[:3].isalpha() and item[3:].isdigit(): #eg abc123
                     row[1] = item
-                elif item[:2] == "BL" and item[2:].isdigit():
+                elif item[:2] == "BL" and item[2:].isdigit(): #eg BL123
                     row[2] = item
-                elif item in config_orig.P_code.keys():
-                    row[3] = item
-                    row[4] = config_orig.P_code[item]
-                elif item in config_orig.BES_list.keys(): # need to account for multiple?
+                elif item in config_orig.P_code.keys(): #finds values in P code list
+                    row[3] = item #raw P code
+                    row[4] = config_orig.P_code[item] #full P code text
+                elif item in config_orig.BES_list.keys(): # other values not in P codes - need to account for multiple?
                     row[5] = item
                     row[4] = config_orig.BES_list[item]
                 elif item in config_orig.Material_list:
@@ -207,7 +203,6 @@ def calc_fields_from_notes(input_fc):
             if len(otherlist) != 0:
                 row[7] = str(otherlist).strip('[]')
             cursor.updateRow(row)
-
 
 def calc_final_field(input_fc):
     with arcpy.da.UpdateCursor(input_fc, ["P_Code", "BES_Code", "Final_Code"]) as cursor:
@@ -232,11 +227,9 @@ def survey_file_base_name(survey_file):
     base_name = os.path.basename(input).split(".")[0]
     return base_name
 
-
 def split_base_name(survey_file):
     split_name = survey_file_base_name(survey_file).split(" ")
     return split_name
-
 
 def find_between(s, first, last):
     try:
@@ -246,18 +239,15 @@ def find_between(s, first, last):
     except ValueError:
         return ""
 
-
 def survey_file_name_date(survey_file):
     # assumes they keep naming the file using same format - super fragile
     date = split_base_name(survey_file)[0]
     return date
 
-
 def survey_file_name_project_number(survey_file):
     # assumes they keep naming the file using same format - super fragile
     project_number = split_base_name(survey_file)[1][:5]
     return project_number
-
 
 def survey_file_name_survey_name(survey_file):
     # assumes they keep naming the file using same format - super fragile
@@ -266,21 +256,21 @@ def survey_file_name_survey_name(survey_file):
                                survey_file_name_user_initials(survey_file))
     return survey_name.strip()
 
-
 def survey_file_name_user_initials(survey_file):
     # assumes they keep naming the file using same format - super fragile
     user_initials = split_base_name(survey_file)[-1]
     return user_initials
 
-
 def insert_tracking_values(tracking_file, survey_file, current_id):
-    cursor = arcpy.da.InsertCursor(tracking_file, ["Survey_Return_ID", "Survey_Name", "Survey_Date", "Project_Number", "Raw_Survey_Path", "Surveyor"])
+    cursor = arcpy.da.InsertCursor(tracking_file, ["Survey_Return_ID", "Survey_Name", "Survey_Date", "Project_Number", "Raw_Survey_Path", "Surveyor", "Date_Registered"])
+    date = datetime.now().strftime("%m/%d/%y")
     cursor.insertRow((current_id,
                       survey_file_name_survey_name(survey_file),
                       survey_file_name_date(survey_file),
                       survey_file_name_project_number(survey_file),
                       survey_file,
-                      survey_file_name_user_initials(survey_file)
+                      survey_file_name_user_initials(survey_file),
+                      date
                       ))
     del cursor
 
@@ -345,9 +335,6 @@ def register_survey_notes(survey_file):
         print "Problem with the input survey file"
         print "No survey will be registered"
 
-
-
-
 # ------ for testing/ running ----------------------------
 
 raw_return_folder = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\survey_raw"
@@ -361,8 +348,13 @@ raw_return_folder = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_p
 
 #file = r"2020-12-14 11098GG COUNCIL SMK.txt"
 #file = r"2020-12-18 11098GH COUNCIL SMK.txt"
-file = r"2020-12-18 11098GI COUNCIL SMK.txt"
+#file = r"2020-12-18 11098GI COUNCIL SMK.txt"
+#file = r"2021-02-05 11098GJ COUNCIL SMK.txt"
+file = r"2021-03-18 10034DB OR S Ash Creek SRB.txt"
 
 
 input = os.path.join(raw_return_folder, file)
 register_survey_notes(input)
+
+# common input error = using " - do a find and replace in txt file ('"','in')
+# just make sure the " is not somehow valid first
