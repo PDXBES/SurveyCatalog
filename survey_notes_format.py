@@ -139,7 +139,7 @@ def add_required_fields(input_fc):
 
         add_text_field(input_fc, "UnitID", 6)
 
-        add_text_field(input_fc, "X_Section", 6)
+        add_text_field(input_fc, "X_Section", 12)
 
         add_text_field(input_fc, "P_Code", 6)
 
@@ -187,8 +187,10 @@ def calc_fields_from_notes(input_fc):
             for item in row[0].split(" "):
                 if len(item) == 6 and item[:3].isalpha() and item[3:].isdigit(): #eg abc123
                     row[1] = item
-                elif item[:2] == "BL" and item[2:].isdigit(): #eg BL123
-                    row[2] = item
+                elif item[:2] == "BL" and len(item[2:]) > 0 and item[2:].isdigit(): #eg BL123
+                    row[2] = str(item)
+                elif item[:2] == "BL" and len(item[2:]) == 0: #eg BL with no number
+                    row[2] = str(item)
                 elif item in config_orig.P_code.keys(): #finds values in P code list
                     row[3] = item #raw P code
                     row[4] = config_orig.P_code[item] #full P code text
@@ -246,7 +248,7 @@ def survey_file_name_date(survey_file):
 
 def survey_file_name_project_number(survey_file):
     # assumes they keep naming the file using same format - super fragile
-    project_number = split_base_name(survey_file)[1][:5]
+    project_number = split_base_name(survey_file)[1]
     return project_number
 
 def survey_file_name_survey_name(survey_file):
@@ -350,11 +352,12 @@ raw_return_folder = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_p
 #file = r"2020-12-18 11098GH COUNCIL SMK.txt"
 #file = r"2020-12-18 11098GI COUNCIL SMK.txt"
 #file = r"2021-02-05 11098GJ COUNCIL SMK.txt"
-file = r"2021-03-18 10034DB OR S Ash Creek SRB.txt"
+#file = r"2021-03-18 10034DB OR S Ash Creek SRB.txt"
+file = r"2021-05-03 E10034 Rock Creek Assets SRB.txt"
 
 
 input = os.path.join(raw_return_folder, file)
 register_survey_notes(input)
 
-# common input error = using " - do a find and replace in txt file ('"','in')
+# common input error = using " (for inches) - do a find and replace in txt file ('"','in')
 # just make sure the " is not somehow valid first
