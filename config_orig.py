@@ -9,12 +9,15 @@
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
 
-# file refs #
 
+import os
+
+# file refs #
+#TODO - need a better location for the Catalog - we started with Council Crest but there are other projects in there now
 survey_catalog_database = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\Survey_Catalog.gdb"
-survey_tracking_path = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\Survey_Catalog.gdb\SurveyTracking"
-survey_points_path = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\Survey_Catalog.gdb\SurveyPoints"
-survey_catalog_current_id_table_path = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\Survey_Catalog.gdb\Current_ID"
+survey_tracking_path = os.path.join(survey_catalog_database, "SurveyTracking")
+survey_points_path = os.path.join(survey_catalog_database, "SurveyPoints")
+survey_catalog_current_id_table_path = os.path.join(survey_catalog_database, "Current_ID")
 temp_working_gdb = r"C:\temp\SurveyCatalog_working.gdb"
 OCRS_sp_ref = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\OCRS Portland NAD 1983 (2011) LCC (Intl Feet).prj"
 
