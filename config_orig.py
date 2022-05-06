@@ -13,20 +13,20 @@
 import os
 
 # file refs #
-#TODO - need a better location for the Catalog - we started with Council Crest but there are other projects in there now
-survey_catalog_database = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\Survey_Catalog.gdb"
+survey_data = r"\\besfile1\ISM_PROJECTS\Planning_Survey\data"
+raw_data = os.path.join(survey_data, "survey_raw")
+#survey_catalog_database = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\Survey_Catalog.gdb"
+survey_catalog_database = os.path.join(survey_data, "Survey_Catalog.gdb")
 survey_tracking_path = os.path.join(survey_catalog_database, "SurveyTracking")
 survey_points_path = os.path.join(survey_catalog_database, "SurveyPoints")
 survey_catalog_current_id_table_path = os.path.join(survey_catalog_database, "Current_ID")
 temp_working_gdb = r"C:\temp\SurveyCatalog_working.gdb"
-OCRS_sp_ref = r"\\besfile1\asm_projects\E11098_Council_Crest\survey\mgmt_process\data\OCRS Portland NAD 1983 (2011) LCC (Intl Feet).prj"
+OCRS_sp_ref = os.path.join(survey_data, "OCRS Portland NAD 1983 (2011) LCC (Intl Feet).prj")
 
 
 BES_list = {"CROWN": "Crown", "THALWAG": "Thalweg", "THALWEG": "Thalweg"}
 
 Material_list = ["DIRT"]
-
-
 
 notes_fields = ["Notes", "UnitID", "X_Section", "P_Code", "Description", "BES_Code", "Material", "Other"]
 
@@ -39,6 +39,7 @@ field_lookup = {
 }
 
 # P codes provided by PBOT
+# prob better if read in from a file
 P_code = {
 'AHEAD' : '"AHEAD" - Text',
 'AL' : 'Arrow - Left Turn',
