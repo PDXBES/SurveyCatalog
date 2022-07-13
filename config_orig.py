@@ -24,23 +24,28 @@ temp_working_gdb = r"C:\temp\SurveyCatalog_working.gdb"
 OCRS_sp_ref = os.path.join(survey_data, "OCRS Portland NAD 1983 (2011) LCC (Intl Feet).prj")
 
 
-BES_list = {"CROWN": "Crown", "THALWAG": "Thalweg", "THALWEG": "Thalweg"}
+# list of values that we want to capture but that are not in the P code (but maybe should be?)
+BES_dict = {"CROWN": "Crown", "THALWAG": "Thalweg", "THALWEG": "Thalweg", "TR": "Trash Rack",
+            "SNF": "Searched Not Found"}
 
-Material_list = ["DIRT"]
+Material_list = ["DIRT", "GRAVEL"]
 
-notes_fields = ["Notes", "UnitID", "X_Section", "P_Code", "Description", "BES_Code", "Material", "Other"]
+notes_fields = ["Notes", "P_Code", "BES_Code", "Description", "X_Section", "Material", "Other"]
 
+# current structure of EJs survey return txt file
 field_lookup = {
 "Field1" : "Point",
 "Field2" : "Northing",
 "Field3" : "Easting",
 "Field4" : "Rim_Elevation",
-"Field5" : "Notes"
+"Field5" : "Notes1",
+"Field6" : "Unit_ID",
+"Field7" : "Notes2"
 }
 
 # P codes provided by PBOT
 # prob better if read in from a file
-P_code = {
+P_code_dict = {
 'AHEAD' : '"AHEAD" - Text',
 'AL' : 'Arrow - Left Turn',
 'AR' : 'Arrow - Right Turn',
@@ -91,7 +96,7 @@ P_code = {
 'ECC' : 'Edge of ConCrete',
 'EGL' : 'Edge of GraveL',
 'EGS' : 'Edge of GrasS',
-'EL' : 'ELevation Shot',
+'EL' : 'Elevation Shot',
 'ERK' : 'Edge of RocK',
 'EW' : 'Edge of Water',
 'EWL' : 'Edge of WeTLand',
