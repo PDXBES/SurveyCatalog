@@ -212,6 +212,8 @@ def pop_to_new_list_if_match(input_list, comparison_list):
 
 def calc_fields_from_notes_old(input_fc):
 
+    # 'OLD' VERSION USES THE FORMAT PRIOR TO EJ CHANGES MADE AROUND JULY 2022
+
     # going to assume that raw txt are using or have been formatted to use real field names
 
     with arcpy.da.UpdateCursor(input_fc, config_orig.notes_fields) as cursor:
@@ -427,7 +429,8 @@ raw_return_folder = config_orig.raw_data
 #file = r"2021-05-03 E10034 Rock Creek Assets SRB.txt"
 #file = r"2021-06-01 E10034 Falling Creek Assets-North SRB.txt"
 #file = r"2022-04-05 10034 WPTC 1 TRYON CK FINAL.txt"
-file = r"2022-06-02 E11033 Council Crest PII Assets Marquam Trail WFB.txt"
+#file = r"2022-06-02 E11033 Council Crest PII Assets Marquam Trail WFB.txt"
+file = r"2022-08-20 10034 Woods Creek Basin Final.txt"
 
 
 input = os.path.join(raw_return_folder, file)

@@ -31,6 +31,9 @@ BES_dict = {"CROWN": "Crown", "THALWAG": "Thalweg", "THALWEG": "Thalweg", "TR": 
 Material_list = ["DIRT", "GRAVEL"]
 
 notes_fields = ["Notes", "P_Code", "BES_Code", "Description", "X_Section", "Material", "Other"]
+# the old one
+#notes_fields = ["Notes", "UnitID", "X_Section", "P_Code", "Description", "BES_Code", "Material", "Other"]
+
 
 # current structure of EJs survey return txt file
 field_lookup = {
@@ -42,6 +45,15 @@ field_lookup = {
 "Field6" : "Unit_ID",
 "Field7" : "Notes2"
 }
+
+# the old one
+#field_lookup = {
+#"Field1" : "Point",
+#"Field2" : "Northing",
+#"Field3" : "Easting",
+#"Field4" : "Rim_Elevation",
+#"Field5" : "Notes1"
+#}
 
 # P codes provided by PBOT
 # prob better if read in from a file
