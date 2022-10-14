@@ -210,7 +210,7 @@ def pop_to_new_list_if_match(input_list, comparison_list):
             new_list.append(popped_value)
     return new_list
 
-def calc_fields_from_notes_old(input_fc):
+def calc_fields_from_notes(input_fc):
 
     # 'OLD' VERSION USES THE FORMAT PRIOR TO EJ CHANGES MADE AROUND JULY 2022
 
@@ -241,7 +241,7 @@ def calc_fields_from_notes_old(input_fc):
                 row[7] = str(otherlist).strip('[]')
             cursor.updateRow(row)
 
-def calc_fields_from_notes(input_fc):
+def calc_fields_from_notes_new(input_fc): #this is EJs format - use going forward
     with arcpy.da.UpdateCursor(input_fc, config_orig.notes_fields) as cursor:
         for row in cursor:
             split_list = row[0].split(" ")
@@ -382,7 +382,7 @@ def register_survey_notes(survey_file):
                 calc_fields_from_notes(survey_xy)
             else:
                 Exception()
-                print "Required fields are missing!"
+                print "Required fields are missing!" #TODO - would be ideal if we knew which were missing
 
             #print "Filling Final_Code field"
             #calc_final_field(survey_xy)
@@ -430,8 +430,11 @@ raw_return_folder = config_orig.raw_data
 #file = r"2021-06-01 E10034 Falling Creek Assets-North SRB.txt"
 #file = r"2022-04-05 10034 WPTC 1 TRYON CK FINAL.txt"
 #file = r"2022-06-02 E11033 Council Crest PII Assets Marquam Trail WFB.txt"
-file = r"2022-08-20 10034 Woods Creek Basin Final.txt"
+#file = r"2022-08-20 10034 Woods Creek Basin Final.txt"
 
+#file = r"2022-10-13 ESOM000033 PEN2 AREA1 DCA.csv"
+#file = r"2022-10-13 ESOM000033 PEN2 AREA2 DCA.csv"
+file = r"2022-10-13 ESOM000033 PEN2 AREA3 DCA.csv"
 
 input = os.path.join(raw_return_folder, file)
 register_survey_notes(input)
